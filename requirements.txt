@@ -1,0 +1,7 @@
+alphagenome
+pandas
+numpy
+scipy
+scikit-learn
+matplotlib
+tqdm
