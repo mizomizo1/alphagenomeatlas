@@ -1,0 +1,28 @@
+# local data and outputs
+/data/
+/outputs/
+/results/
+*.tsv
+*.csv
+*.xlsx
+*.json
+*.png
+*.pdf
+*.ipynb
+
+# keep repository metadata files
+!requirements.txt
+!README.md
+!config.example.env
+
+# secrets
+.env
+*.env
+.env.*
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
