@@ -47,8 +47,9 @@ Notes:
 
 - `label`: 1 = pathogenic, 0 = benign/control.
 - `pos_hg38`: 1-based hg38 coordinate, used for AlphaGenome Atlas queries.
-- `spdi_hg38_0based`: kept for audit only. The scoring script uses `chrom`, `pos_hg38`, `ref`, and `alt`.
-- `ref` or `alt` may be `-` for indels; the script converts this to an empty allele for the query and records any API failure.
+- `spdi_hg38_0based`: kept for audit. The main scoring script uses `chrom`, `pos_hg38`, `ref`, and `alt`.
+- `ref` or `alt` may be `-` for indels; the main scoring script converts this to an empty allele and records any API failure.
+- For indels, run the dedicated validation script below before concluding that the Atlas API/scorer lacks coverage.
 
 ## Setup
 
@@ -81,6 +82,47 @@ The script writes:
 04_scorer_metadata.tsv
 ```
 
+## Validate INDEL query representation
+
+If INDELs are all missing, do not immediately conclude that AlphaGenome Atlas cannot score indels.
+First test whether the query representation matches the Atlas representation.
+
+```bash
+python scripts/validate_indel_query_representations.py \
+  --input-tsv /path/to/all_482_for_avi.tsv \
+  --outdir /path/to/indel_validation_outputs \
+  --use-ucsc-reference \
+  --interval-probe
+```
+
+For stricter reproducibility, use a local hg38/GRCh38 FASTA instead of UCSC REST:
+
+```bash
+python scripts/validate_indel_query_representations.py \
+  --input-tsv /path/to/all_482_for_avi.tsv \
+  --outdir /path/to/indel_validation_outputs \
+  --hg38-fasta /path/to/hg38.fa \
+  --interval-probe
+```
+
+This tests, for each INDEL:
+
+- direct `pos_hg38` + `ref/alt`
+- direct `spdi_hg38_0based`
+- off-by-one sanity checks
+- left-padded previous-base representation
+- `genome.normalize_variant(...)` representation when reference sequence is available
+- small interval probes around the locus
+
+It writes:
+
+```text
+indel_candidate_query_results.tsv
+indel_candidate_strategy_summary.tsv
+indel_interval_probe_results.tsv
+indel_validation_run_metadata.json
+```
+
 ## Run analysis
 
 ```bash
@@ -110,6 +152,7 @@ Key checks before using in a manuscript:
 - Are failed variants retained in the output?
 - Does AVI coverage differ by label?
 - Is missingness explained by variant type, especially indels?
+- Have indel failures been checked with normalized/left-padded representations?
 - Is the AUROC comparison done on a matched subset when comparing AVI and Evo2?
 - Are AlphaGenome package/API versions and scoring date recorded?
 
